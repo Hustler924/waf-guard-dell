@@ -38,5 +38,29 @@
     "url": "/login",
     "attack": "XSS",
     "payload": "{\"username\":\"admin\",\"password\":\"javascript:alert(1)\"}/login"
+  },
+  {
+    "time": "3/22/2026, 4:51:53 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/login",
+    "attack": "XSS",
+    "payload": "{\"username\":\"admin\",\"password\":\"javascript:alert(1)\"}/login"
+  },
+  {
+    "time": "3/22/2026, 4:52:03 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/login",
+    "attack": "XSS",
+    "payload": "{\"username\":\"admin\",\"password\":\"javascript:alert(1)\"}/login"
+  },
+  {
+    "time": "3/22/2026, 5:11:08 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/login",
+    "attack": "XSS",
+    "payload": "{\"username\":\"admin\",\"password\":\"javascript:alert(1)\"}/login"
   }
 ]

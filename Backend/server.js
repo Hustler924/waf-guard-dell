@@ -5,6 +5,8 @@ const xssFilter = require("./Middleware/xssFilter");
 const pathGuard = require("./Middleware/pathGuard");
 const fs = require("fs");
 const path = require("path");
+const cors = require("cors");
+
 
 const app = express();
 
@@ -13,7 +15,7 @@ app.use(interceptor); // 👈 IMPORTANT
 app.use(sqlFilter);
 app.use(xssFilter);
 app.use(pathGuard);
-
+app.use(cors());
 
 //Routes
 app.post("/login", (req, res) => {
