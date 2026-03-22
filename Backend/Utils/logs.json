@@ -1,0 +1,42 @@
+[
+  {
+    "time": "3/22/2026, 12:02:13 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/login",
+    "attack": "Path Traversal",
+    "payload": "{\"file\":\"../../etc/passwd\"}/login"
+  },
+  {
+    "time": "3/22/2026, 12:04:57 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/login",
+    "attack": "Path Traversal",
+    "payload": "{\"file\":\"../../etc/passwd\"}/login"
+  },
+  {
+    "time": "3/22/2026, 12:05:45 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/login",
+    "attack": "Path Traversal",
+    "payload": "{\"file\":\"../../etc/passwd\"}/login"
+  },
+  {
+    "time": "3/22/2026, 12:05:50 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/login",
+    "attack": "XSS",
+    "payload": "{\"username\":\"admin\",\"password\":\"javascript:alert(1)\"}/login"
+  },
+  {
+    "time": "3/22/2026, 12:05:52 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/login",
+    "attack": "XSS",
+    "payload": "{\"username\":\"admin\",\"password\":\"javascript:alert(1)\"}/login"
+  }
+]
