@@ -2,12 +2,11 @@ const logAttack = require("../Utils/logger");
 module.exports = (req, res, next) => {
     const data = JSON.stringify(req.body) + req.url;
 
-    const patterns = [
-        /(\%27)|(\')|(\-\-)|(\%23)|(#)/i,              // ' or comment
-        /((\%3D)|(=))[^\n]*((\%27)|(\')|(\-\-)|(\%3B)|(;))/i,
-        /\w*((\%27)|(\'))\s*or\s*\1=*\1/i,             // ' OR '1'='1
-        /((\%27)|(\'))union/i                         // UNION attack
-    ];
+   const patterns = [
+    /('|--|#)/i,
+    /(or\s+1=1)/i,
+    /(union\s+select)/i
+];
 
     for (let pattern of patterns) {
       if (pattern.test(data)) {

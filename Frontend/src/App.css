@@ -36,3 +36,88 @@
     transform: rotate(360deg);
   }
 }
+
+body {
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
+}
+
+.container {
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+}
+
+.buttons button {
+  margin: 10px;
+  padding: 10px 15px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+  background: #1e293b;
+}
+
+th, td {
+  border: 1px solid #334155;
+  padding: 10px;
+  text-align: center;
+}
+
+.attack-SQL\ Injection {
+  color: red;
+}
+
+.attack-XSS {
+  color: orange;
+}
+
+.attack-Path\ Traversal {
+  color: cyan;
+}
+
+.stats {
+  display: flex;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.card {
+  flex: 1;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.total {
+  background: #1e293b;
+}
+
+.sql {
+  background: #2a0d0d;
+  color: #ff4d4f;
+}
+
+.xss {
+  background: #2a230d;
+  color: #faad14;
+}
+
+.path {
+  background: #0d1f2a;
+  color: #40a9ff;
+}

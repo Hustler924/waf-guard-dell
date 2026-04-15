@@ -1,23 +1,30 @@
 const express = require("express");
+const cors = require("cors"); 
 const interceptor = require("./Middleware/Interceptor");
 const sqlFilter = require("./Middleware/sqlFilter");
 const xssFilter = require("./Middleware/xssFilter");
 const pathGuard = require("./Middleware/pathGuard");
 const fs = require("fs");
 const path = require("path");
-const cors = require("cors");
+  
 
 
 const app = express();
-
-app.use(express.json());
-app.use(interceptor); // 👈 IMPORTANT
-app.use(sqlFilter);
-app.use(xssFilter);
-app.use(pathGuard);
 app.use(cors());
+app.use(express.json());
+
+app.use(interceptor); // 👈 IMPORTANT
+app.use(xssFilter);
+app.use(sqlFilter);  
+app.use(pathGuard);
+
 
 //Routes
+
+app.post("/simulate", (req, res) => {
+    res.send("Simulation request sent");
+});
+
 app.post("/login", (req, res) => {
     res.send("Login endpoint reached");
 });
@@ -61,6 +68,8 @@ app.get("/logs", (req, res) => {
 
     res.json(stats);
 });*/
+
+
 
 app.get("/stats", (req, res) => {
     const logFile = path.join(__dirname, "Utils", "logs.json");

@@ -2,12 +2,11 @@ const logAttack = require("../Utils/logger");
 module.exports = (req, res, next) => {
     const data = JSON.stringify(req.body) + req.url;
 
-    const patterns = [
-        /<script.*?>.*?<\/script>/i,     // script tags
-        /javascript:/i,                // JS protocol
-        /on\w+\s*=/i,                  // onclick=, onerror=
-        /<.*?on\w+.*?>/i               // inline JS in tags
-    ];
+   const patterns = [
+    /<script.*?>.*?<\/script>/i,
+    /javascript:/i,
+    /on\w+=/i
+];
 
     for (let pattern of patterns) {
        if (pattern.test(data)) {
