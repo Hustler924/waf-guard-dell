@@ -382,5 +382,101 @@
     "url": "/simulate",
     "attack": "SQL Injection",
     "payload": "{\"input\":\"' OR 1=1 --\"}/simulate"
+  },
+  {
+    "time": "4/15/2026, 1:41:29 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "SQL Injection",
+    "payload": "{\"input\":\"' OR 1=1 --\"}/simulate"
+  },
+  {
+    "time": "4/15/2026, 1:41:34 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "XSS",
+    "payload": "{\"input\":\"<script>alert('hack')</script>\"}/simulate"
+  },
+  {
+    "time": "4/15/2026, 1:41:37 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "Path Traversal",
+    "payload": "{\"input\":\"../../etc/passwd\"}/simulate"
+  },
+  {
+    "time": "4/15/2026, 2:06:44 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "Path Traversal",
+    "payload": "{\"input\":\"../../etc/passwd\"}/simulate"
+  },
+  {
+    "time": "4/15/2026, 5:42:39 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "Path Traversal",
+    "payload": "{\"input\":\"../../etc/passwd\"}/simulate"
+  },
+  {
+    "time": "4/15/2026, 5:42:41 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "XSS",
+    "payload": "{\"input\":\"<script>alert('hack')</script>\"}/simulate"
+  },
+  {
+    "time": "4/15/2026, 5:47:50 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "Path Traversal",
+    "payload": "{\"input\":\"../../etc/passwd\"}/simulate"
+  },
+  {
+    "time": "4/15/2026, 6:24:42 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "XSS",
+    "payload": "{\"input\":\"<script>alert('hack')</script>\"}/simulate"
+  },
+  {
+    "time": "4/15/2026, 7:14:35 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "XSS",
+    "payload": "{\"type\":\"XSS\",\"payload\":\"<script>alert('xss')</script>\"}/simulate"
+  },
+  {
+    "time": "4/15/2026, 7:14:36 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "SQL Injection",
+    "payload": "{\"type\":\"SQL Injection\",\"payload\":\"' OR 1=1 --\"}/simulate"
+  },
+  {
+    "time": "4/15/2026, 7:19:21 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "SQL Injection",
+    "payload": "{\"type\":\"SQL Injection\",\"payload\":\"' OR 1=1 --\"}/simulate"
+  },
+  {
+    "time": "4/15/2026, 7:22:00 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "SQL Injection",
+    "payload": "{\"type\":\"SQL Injection\",\"payload\":\"' OR 1=1 --\"}/simulate"
   }
 ]

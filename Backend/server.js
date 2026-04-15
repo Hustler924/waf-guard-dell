@@ -1,94 +1,112 @@
 const express = require("express");
-const cors = require("cors"); 
+const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
+
 const interceptor = require("./Middleware/Interceptor");
 const sqlFilter = require("./Middleware/sqlFilter");
 const xssFilter = require("./Middleware/xssFilter");
 const pathGuard = require("./Middleware/pathGuard");
-const fs = require("fs");
-const path = require("path");
-  
-
+const authMiddleware = require("./Middleware/authMiddleware");
 
 const app = express();
+
+const PORT = 3000;
+const LOG_FILE = path.join(__dirname, "Utils", "logs.json");
+
+// Simple admin config
+process.env.ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
+process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+process.env.ADMIN_TOKEN = process.env.ADMIN_TOKEN || "securetoken123";
+
 app.use(cors());
 app.use(express.json());
 
-app.use(interceptor); // 👈 IMPORTANT
+// Request logging
+app.use(interceptor);
+
+// Security filters
 app.use(xssFilter);
-app.use(sqlFilter);  
+app.use(sqlFilter);
 app.use(pathGuard);
 
-
-//Routes
-
-app.post("/simulate", (req, res) => {
-    res.send("Simulation request sent");
-});
-
-app.post("/login", (req, res) => {
-    res.send("Login endpoint reached");
-});
-
+// Public health route
 app.get("/", (req, res) => {
-    res.send("WAF Guard Running...");
+  res.send("WAF Guard Running...");
 });
 
-app.listen(3000, () => {
-    console.log("Server running on port 3000");
+// Public test route
+app.post("/simulate", (req, res) => {
+  const { type, payload } = req.body;
+
+  return res.json({
+    success: true,
+    message: "Simulation request processed by WAF test endpoint",
+    simulationType: type || "Unknown",
+    receivedPayload: payload || req.body,
+    timestamp: new Date().toLocaleString()
+  });
 });
 
-app.get("/logs", (req, res) => {
-    const logFile = path.join(__dirname, "Utils", "logs.json");
+// Real backend login
+app.post("/login-admin", (req, res) => {
+  const { username, password } = req.body;
 
-    const logs = JSON.parse(fs.readFileSync(logFile));
+  if (
+    username === process.env.ADMIN_USERNAME &&
+    password === process.env.ADMIN_PASSWORD
+  ) {
+    return res.json({
+      success: true,
+      token: process.env.ADMIN_TOKEN,
+      message: "Admin login successful",
+    });
+  }
 
-     // 🔥 BONUS: show latest logs first
+  return res.status(401).json({
+    success: false,
+    error: "Invalid credentials",
+  });
+});
+
+// Protected logs route
+app.get("/logs", authMiddleware, (req, res) => {
+  try {
+    if (!fs.existsSync(LOG_FILE)) {
+      fs.writeFileSync(LOG_FILE, "[]");
+    }
+
+    const logs = JSON.parse(fs.readFileSync(LOG_FILE, "utf-8"));
     const sortedLogs = logs.slice().reverse();
 
-//👇 Pretty format
-    res.setHeader("Content-Type", "application/json");
-    res.send(JSON.stringify(logs.reverse(), null, 2));
-
-   // res.json(logs);
+    res.json(sortedLogs);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to read logs" });
+  }
 });
 
-/*app.get("/stats", (req, res) => {
-    const logFile = path.join(__dirname, "Utils", "logs.json");
-    const logs = JSON.parse(fs.readFileSync(logFile));
+// Protected stats route
+app.get("/stats", authMiddleware, (req, res) => {
+  try {
+    if (!fs.existsSync(LOG_FILE)) {
+      fs.writeFileSync(LOG_FILE, "[]");
+    }
 
-    //Pretty Print Was Not Available In This Code
-    
+    const logs = JSON.parse(fs.readFileSync(LOG_FILE, "utf-8"));
 
     const stats = {
-        total: logs.length,
-        sql: logs.filter(l => l.attack === "SQL Injection").length,
-        xss: logs.filter(l => l.attack === "XSS").length,
-        path: logs.filter(l => l.attack === "Path Traversal").length
+      total: logs.length,
+      sql: logs.filter((log) => log.attack === "SQL Injection").length,
+      xss: logs.filter((log) => log.attack === "XSS").length,
+      path: logs.filter((log) => log.attack === "Path Traversal").length,
     };
 
     res.json(stats);
-});*/
+  } catch (error) {
+    res.status(500).json({ error: "Failed to generate stats" });
+  }
+});
 
-
-
-app.get("/stats", (req, res) => {
-    const logFile = path.join(__dirname, "Utils", "logs.json");
-    const logs = JSON.parse(fs.readFileSync(logFile));
-
-    let total = logs.length;
-    let sql = 0;
-    let xss = 0;
-    let pathAttack = 0;
-
-    for (let log of logs) {
-        if (log.attack === "SQL Injection") sql++;
-        if (log.attack === "XSS") xss++;
-        if (log.attack === "Path Traversal") pathAttack++;
-    }
-
-    const stats = { total, sql, xss, path: pathAttack };
-
-    // ✅ Pretty print
-    res.setHeader("Content-Type", "application/json");
-    res.send(JSON.stringify(stats, null, 2));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

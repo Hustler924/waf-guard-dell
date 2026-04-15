@@ -1,32 +1,37 @@
 const logAttack = require("../Utils/logger");
-module.exports = (req, res, next) => {
-    const data = JSON.stringify(req.body) + req.url;
+const { collectRequestData, getClientIp } = require("../Utils/requestUtils");
 
-   const patterns = [
+module.exports = (req, res, next) => {
+  const data = collectRequestData(req);
+
+  const patterns = [
     /<script.*?>.*?<\/script>/i,
     /javascript:/i,
-    /on\w+=/i
-];
+    /onerror\s*=/i,
+    /onload\s*=/i,
+    /onclick\s*=/i,
+    /<iframe/i,
+    /<img/i
+  ];
 
-    for (let pattern of patterns) {
-       if (pattern.test(data)) {
-    console.log("🚨 XSS Attack Detected!");
-    console.log("Blocked XSS Payload:", data); // 👈 BONUS
+  for (const pattern of patterns) {
+    if (pattern.test(data)) {
+      logAttack({
+        time: new Date().toLocaleString(),
+        ip: getClientIp(req),
+        method: req.method,
+        url: req.originalUrl,
+        attack: "XSS",
+        payload: data,
+        severity: "High"
+      });
 
-    logAttack({
-    time: new Date().toLocaleString(),
-    ip: req.ip,
-    method: req.method,
-    url: req.url,
-    attack: "XSS",
-    payload: data
-});
-
-            return res.status(403).json({
-                error: "Blocked by WAF (XSS Attack)"
-            });
-        }
+      return res.status(403).json({
+        error: "Blocked by WAF",
+        type: "XSS",
+      });
     }
+  }
 
-    next();
+  next();
 };

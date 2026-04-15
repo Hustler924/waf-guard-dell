@@ -1,30 +1,44 @@
 const fs = require("fs");
 const path = require("path");
 
-// Create path to logs.json
 const logFile = path.join(__dirname, "logs.json");
 
-// If file doesn't exist → create it
-if (!fs.existsSync(logFile)) {
-    fs.writeFileSync(logFile, "[]");
+function shortenPayload(payload, maxLength = 180) {
+  const text = typeof payload === "string" ? payload : JSON.stringify(payload);
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + "...";
 }
 
-// Function to add log
 function logAttack(entry) {
-    // Read existing logs
-    const logs = JSON.parse(fs.readFileSync(logFile));
+  let logs = [];
 
-    // Add new log
-    logs.push(entry);
-
-       // ✅ THEN limit size
-    if (logs.length > 200) {
-        logs.shift(); // remove oldest
+  if (fs.existsSync(logFile)) {
+    try {
+      logs = JSON.parse(fs.readFileSync(logFile, "utf-8"));
+      if (!Array.isArray(logs)) logs = [];
+    } catch (err) {
+      logs = [];
     }
+  }
 
-    // Save back to file
-    fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
-    
+  const cleanEntry = {
+    id: Date.now(),
+    time: entry.time || new Date().toLocaleString(),
+    ip: entry.ip || "Unknown",
+    method: entry.method || "Unknown",
+    url: entry.url || "Unknown",
+    attack: entry.attack || "Unknown",
+    payload: shortenPayload(entry.payload || ""),
+    severity: entry.severity || "High"
+  };
+
+  logs.push(cleanEntry);
+
+  if (logs.length > 200) {
+    logs = logs.slice(-200);
+  }
+
+  fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
 }
 
 module.exports = logAttack;

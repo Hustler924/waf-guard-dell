@@ -1,11 +1,10 @@
 module.exports = (req, res, next) => {
-    console.log("---- Incoming Request ----");
-    console.log("URL:", req.url);
-    console.log("Method:", req.method);
-    console.log("Body:", req.body);
-    console.log("Headers:", req.headers);
-    console.log("--------------------------");
-    console.log("✅ Request Passed Security Check");
+  console.log("---- Incoming Request ----");
+  console.log("Time:", new Date().toLocaleString());
+  console.log("URL:", req.originalUrl);
+  console.log("Method:", req.method);
+  console.log("IP:", req.ip);
+  console.log("--------------------------");
 
-    next();
+  next();
 };

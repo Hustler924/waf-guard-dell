@@ -1,32 +1,37 @@
 const logAttack = require("../Utils/logger");
+const { collectRequestData, getClientIp } = require("../Utils/requestUtils");
+
 module.exports = (req, res, next) => {
-    const data = JSON.stringify(req.body) + req.url;
+  const data = collectRequestData(req);
 
-   const patterns = [
-    /('|--|#)/i,
-    /(or\s+1=1)/i,
-    /(union\s+select)/i
-];
+  const patterns = [
+    /(\bor\b|\band\b)\s+\d+\s*=\s*\d+/i,
+    /union\s+select/i,
+    /drop\s+table/i,
+    /insert\s+into/i,
+    /delete\s+from/i,
+    /update\s+\w+\s+set/i,
+    /--/i
+  ];
 
-    for (let pattern of patterns) {
-      if (pattern.test(data)) {
-    console.log("🚨 SQL Injection Detected!");
-    console.log("Blocked Payload:", data); // 👈 BONUS
-
-    logAttack({
-      time: new Date().toLocaleString(),
-        ip: req.ip,
+  for (const pattern of patterns) {
+    if (pattern.test(data)) {
+      logAttack({
+        time: new Date().toLocaleString(),
+        ip: getClientIp(req),
         method: req.method,
-        url: req.url,
+        url: req.originalUrl,
         attack: "SQL Injection",
-        payload: data
-    });
+        payload: data,
+        severity: "Critical"
+      });
 
-    return res.status(403).json({
-        error: "Blocked by WAF (SQL Injection)"
-    });
-}
+      return res.status(403).json({
+        error: "Blocked by WAF",
+        type: "SQL Injection",
+      });
     }
+  }
 
-    next();
+  next();
 };
