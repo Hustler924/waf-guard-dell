@@ -3,12 +3,12 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 import Login from "./login";
-import { Bar } from "react-chartjs-2";
+import { Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend
 } from "chart.js";
 
 
@@ -39,52 +39,82 @@ const cardValueStyle = {
 
   const [logs, setLogs] = useState([]);
   const [isAdmin, setIsAdmin] = useState(!!localStorage.getItem("adminToken"));
-
+const [lastAttack, setLastAttack] = useState("-");
+const [selectedAttackType, setSelectedAttackType] = useState("All");
   const [stats, setStats] = useState({
   total: 0,
   sql: 0,
   xss: 0,
   path: 0,
+   command: 0,
+  failedLogins: 0
 });
+const [isScrolled, setIsScrolled] = useState(false);
 
+useEffect(() => {
+   const handleScroll = () => {
+    if (window.scrollY > 50) {
+      setIsScrolled(true);
+    } else {
+      setIsScrolled(false);
+    }
+  };
+  window.addEventListener("scroll", handleScroll);
+  return () => window.removeEventListener("scroll", handleScroll);
+} , []);
 
 useEffect(() => {
   if (isAdmin) {
     fetchLogs();
     fetchStats();
   }
+  // eslint-disable-next-line
 }, [isAdmin]);
 
   // ✅ Fetch logs from backend
- const fetchLogs = async () => {
-  try {
-    const res = await fetch("http://localhost:3000/logs", {
-      headers: getAuthHeaders()
-    });
+ async function fetchLogs() {
+    try {
+      const res = await fetch("http://localhost:3000/logs", {
+        headers: getAuthHeaders()
+      });
 
-    if (res.status === 401 || res.status === 403) {
-      localStorage.removeItem("adminToken");
-      setIsAdmin(false);
-      return;
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem("adminToken");
+        setIsAdmin(false);
+        return;
+      }
+
+      const data = await res.json();
+      setLogs(data);
+      if (data.length > 0) {
+        setLastAttack(data[0].time);
+      } else {
+        setLastAttack("-");
+      }
+
+     const sql = data.filter((log) => log.attack === "SQL Injection").length;
+const xss = data.filter((log) => log.attack === "XSS").length;
+const path = data.filter((log) => log.attack === "Path Traversal").length;
+const command = data.filter((log) => log.attack === "Command Injection").length;
+const failedLogins = data.filter(
+  (log) =>
+    log.attack === "Failed Admin Login" ||
+    log.attack === "Brute Force Lockout" ||
+    log.attack === "Blocked Admin Login Attempt"
+).length;
+
+setStats({
+  total: data.length,
+  sql,
+  xss,
+  path,
+  command,
+  failedLogins
+});
+    } catch (err) {
+      console.error(err);
     }
-
-    const data = await res.json();
-    setLogs(data);
-
-    const sql = data.filter(log => log.attack === "SQL Injection").length;
-    const xss = data.filter(log => log.attack === "XSS").length;
-    const path = data.filter(log => log.attack === "Path Traversal").length;
-
-    setStats({
-      total: data.length,
-      sql,
-      xss,
-      path
-    });
-  } catch (err) {
-    console.error(err);
   }
-};
 
 const fetchStats = async () => {
   try {
@@ -101,21 +131,40 @@ const fetchStats = async () => {
   }
 };
 
-ChartJS.register(CategoryScale, LinearScale, BarElement);
+ChartJS.register(ArcElement, Tooltip, Legend);
 const chartData = {
-  labels: ["SQL", "XSS", "Path"],
+  labels: [
+    "SQL Injection",
+    "XSS",
+    "Path Traversal",
+    "Command Injection",
+    "Failed Attempts"
+  ],
   datasets: [
     {
-      label: "Attacks",
-      data: [stats.sql, stats.xss, stats.path],
-      backgroundColor: ["red", "orange", "blue"],
-    },
-  ],
+      data: [
+        stats.sql,
+        stats.xss,
+        stats.path,
+        stats.command,
+        stats.failedLogins
+      ],
+    backgroundColor: [
+  "#ff4d4f",
+  "#fadb14",
+  "#1677ff",
+  "#52c41a",
+  "#722ed1"
+],
+      borderWidth: 2,
+borderColor: "#0b1a2f"
+    }
+  ]
 };
 
   // ✅ Attack Simulator
 
-  const [simulationResult, setSimulationResult] = useState("");
+ 
   const simulateAttack = async (type, payload) => {
   try {
     const res = await fetch("http://localhost:3000/simulate", {
@@ -127,11 +176,11 @@ const chartData = {
     });
 
     const data = await res.json();
-
-    if (!res.ok) {
-      setSimulationResult(`Blocked ${type} attack by WAF`);
+    
+if (!res.ok) {
+      toast.warn(`${type} blocked and logged by WAF`);
     } else {
-      setSimulationResult(data.message || `${type} simulation completed`);
+      toast.success(`${type} simulation completed`);
     }
 
     if (isAdmin) {
@@ -147,7 +196,7 @@ const chartData = {
       }
 
    } catch (err) {
-    setSimulationResult("Simulation failed. Check backend connection.");
+    
   }
 };
 
@@ -168,75 +217,213 @@ if (!isAdmin) {
   return <Login onLogin={setIsAdmin} />;
 }
 
+const filteredLogs =
+  selectedAttackType === "All"
+    ? logs
+    : selectedAttackType === "Failed Login Events"
+    ? logs.filter(
+        (log) =>
+          log.attack === "Failed Admin Login" ||
+          log.attack === "Brute Force Lockout" ||
+          log.attack === "Blocked Admin Login Attempt"
+      )
+    : logs.filter((log) => log.attack === selectedAttackType);
+
+    const exportLogs = () => {
+  const dataStr = JSON.stringify(logs, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "waf-logs.json";
+  a.click();
+
+  window.URL.revokeObjectURL(url);
+  toast.success("Logs exported successfully");
+};
 
 
   return (
     
     <>
-    
-<div style={{
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  position: "sticky",
-  top: 0,
-  background: "#0b1a2f",
-  padding: "10px 0",
-  zIndex: 1000
-}}>
-
- <div>
-  <h1 style={{ marginBottom: "5px" }}>🛡️ WAF Security Dashboard</h1>
-  <p style={{ color: "#b8c7e0", marginTop: 0 }}>
-    Real-time monitoring of blocked web attack simulations
-  </p>
-</div>
-
-  <button
-    onClick={() => {
-      localStorage.removeItem("adminToken");
-      setIsAdmin(false);
-    }}
+<div
+  style={{
+    position: isScrolled ? "fixed" : "relative",
+    top: 0,
+    left: 0,
+    width: "100%",
+    background: "#061a3a",
+    padding: isScrolled ? "10px 20px" : "10px",
+    transition: "all 0.3s ease",
+    zIndex: 1000
+  }}
+>
+  <div
     style={{
-      padding: "8px 16px",
-      backgroundColor: "#ff4d4f",
-      color: "white",
-      border: "none",
-      borderRadius: "5px",
-      cursor: "pointer"
+      maxWidth: "1100px",
+      margin: "0 auto",
+      display: "flex",
+      justifyContent: isScrolled ? "space-between" : "center",
+      alignItems: "center",
+      textAlign: isScrolled ? "left" : "center"
     }}
   >
-    Logout
-  </button>
+    {/* LEFT SIDE */}
+    <div>
+      <h1
+        style={{
+          margin: 0,
+          fontSize: isScrolled ? "22px" : "42px",
+          fontWeight: "800",
+          color: "white",
+          transition: "all 0.3s ease"
+        }}
+      >
+        WAF Guard
+      </h1>
+
+      {!isScrolled && (
+        <p
+          style={{
+            color: "#b8c7e0",
+            fontSize: "15px",
+            marginTop: "8px"
+          }}
+        >
+          Real-time Web Application Firewall Monitoring System
+        </p>
+      )}
+    </div>
+
+    {/* RIGHT SIDE */}
+    {isScrolled && (
+      <button
+        onClick={() => {
+          localStorage.removeItem("adminToken");
+          setIsAdmin(false);
+        }}
+        style={{
+          padding: "8px 14px",
+          backgroundColor: "#ff4d4f",
+          color: "white",
+          border: "none",
+          borderRadius: "6px",
+          cursor: "pointer"
+        }}
+      >
+        Logout
+      </button>
+    )}
+  </div>
 </div>
 
 <div
   style={{
     display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
+    gridTemplateColumns: "repeat(3, 1fr)",
     gap: "15px",
+   marginTop: isScrolled ? "80px" : "20px",
     marginBottom: "30px"
   }}
 >
-  <div style={cardStyle}>
-    <h3>Total Attacks</h3>
-    <p style={cardValueStyle}>{stats.total}</p>
-  </div>
 
-  <div style={cardStyle}>
-    <h3>SQL Injection</h3>
-    <p style={cardValueStyle}>{stats.sql}</p>
-  </div>
+ <div
+ 
+  onClick={() => setSelectedAttackType("All")}
+  style={{
+    ...cardStyle,
+    cursor: "pointer",
+    border:
+      selectedAttackType === "All"
+        ? "2px solid #00c853"
+        : "2px solid transparent"
+  }}
+>
+  <h3>Total Attacks</h3>
+  <p style={cardValueStyle}>{stats.total}</p>
+</div>
 
-  <div style={cardStyle}>
-    <h3>XSS Attacks</h3>
-    <p style={cardValueStyle}>{stats.xss}</p>
-  </div>
+  <div
+  onClick={() => setSelectedAttackType("SQL Injection")}
+  style={{
+    ...cardStyle,
+    cursor: "pointer",
+    border:
+      selectedAttackType === "SQL Injection"
+        ? "2px solid #ff4d4f"
+        : "2px solid transparent"
+  }}
+>
 
-  <div style={cardStyle}>
-    <h3>Path Traversal</h3>
-    <p style={cardValueStyle}>{stats.path}</p>
-  </div>
+  <h3>SQL Injection</h3>
+  <p style={cardValueStyle}>{stats.sql}</p>
+
+</div>
+
+ <div
+  onClick={() => setSelectedAttackType("XSS")}
+  style={{
+    ...cardStyle,
+    cursor: "pointer",
+    border:
+      selectedAttackType === "XSS"
+        ? "2px solid #faad14"
+        : "2px solid transparent"
+  }}
+>
+  <h3>XSS Attacks</h3>
+  <p style={cardValueStyle}>{stats.xss}</p>
+</div>
+
+ <div
+  onClick={() => setSelectedAttackType("Path Traversal")}
+  style={{
+    ...cardStyle,
+    cursor: "pointer",
+    border:
+      selectedAttackType === "Path Traversal"
+        ? "2px solid #1677ff"
+        : "2px solid transparent"
+  }}
+>
+  <h3>Path Traversal</h3>
+  <p style={cardValueStyle}>{stats.path}</p>
+</div>
+
+<div
+  onClick={() => setSelectedAttackType("Command Injection")}
+  style={{
+    ...cardStyle,
+    cursor: "pointer",
+    border:
+      selectedAttackType === "Command Injection"
+        ? "2px solid #13c2c2"
+        : "2px solid transparent"
+  }}
+>
+  <h3>Command Injection</h3>
+  <p style={cardValueStyle}>{stats.command}</p>
+</div>
+
+<div
+  onClick={() => setSelectedAttackType("Failed Login Events")}
+  style={{
+    ...cardStyle,
+    cursor: "pointer",
+    border:
+      selectedAttackType === "Failed Login Events"
+        ? "2px solid #ff9f1a"
+        : "2px solid transparent"
+  }}
+>
+  <h3>Failed Attempts</h3>
+  <p style={cardValueStyle}>{stats.failedLogins}</p>
+</div>
+
+<p style={{ color: "#b8c7e0", marginTop: "10px", marginBottom: "20px" }}>
+  Last detected attack: {lastAttack}
+</p>
 </div>
 
 <div
@@ -251,28 +438,23 @@ if (!isAdmin) {
   <h2 style={{ color: "white", marginBottom: "20px" }}>
     Attack Trends Overview
   </h2>
+  
 
-  <Bar
+ <div style={{ maxWidth: "420px", margin: "0 auto" }}>
+  <Pie
     data={chartData}
     options={{
       responsive: true,
       plugins: {
         legend: {
-          display: false
-        }
-      },
-      scales: {
-        x: {
-          ticks: { color: "white" },
-          grid: { color: "rgba(255,255,255,0.08)" }
-        },
-        y: {
-          ticks: { color: "white" },
-          grid: { color: "rgba(255,255,255,0.08)" }
+          labels: {
+            color: "white"
+          }
         }
       }
     }}
   />
+</div>
 </div>
 
 <div>
@@ -336,31 +518,129 @@ if (!isAdmin) {
     Path Traversal
   </button>
 
+  <button
+  onClick={() => simulateAttack("Command Injection", "; ls")}
+  style={{
+      padding: "14px 22px",
+      border: "none",
+      borderRadius: "10px",
+      cursor: "pointer",
+      fontSize: "1rem",
+      fontWeight: "bold",
+      marginRight: "12px",
+      marginBottom: "12px",
+      boxShadow: "0 4px 10px rgba(0,0,0,0.25)",
+      backgroundColor: "#1677ff",
+      color: "white"
+    }}
+>
+  Simulate Command Injection
+</button>
+
 </div>
+
+<button
+  onClick={async () => {
+    if (!window.confirm("Are you sure you want to clear all logs?")) return;
+    try {
+      await fetch("http://localhost:3000/clear-logs", {
+        method: "DELETE",
+        headers: getAuthHeaders()
+      });
+      fetchLogs();
+      fetchStats();
+      toast.success("Logs cleared successfully");
+    } catch (err) {
+      console.error(err);
+    }
+  }}
+  style={{
+    padding: "10px 16px",
+    backgroundColor: "#ff4d4f",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    marginBottom: "15px"
+  }}
+>
+  Clear Logs
+</button>
+
+<space>   </space>
+
+<button
+  onClick={() => exportLogs()}
+  style={{
+    padding: "10px 16px",
+    backgroundColor: "#1677ff",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    marginBottom: "15px",
+    marginRight: "10px"
+  }}
+>
+  Export Logs
+</button>
   
 
 
         {/* 📜 LOGS TABLE */}
         <h2>📜 Attack Logs</h2>
+        
+        <p style={{ color: "#b8c7e0", marginBottom: "15px" }}>
+  Showing logs for: <strong>{selectedAttackType}</strong>
+</p>
         <table>
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>IP</th>
-              <th>Severity</th>
-              <th>Method</th>
-              <th>URL</th>
-              <th>Attack</th>
-              <th>Payload</th>
-            </tr>
-          </thead>
+         <thead>
+  <tr>
+    <th style={{ padding: "12px", textAlign: "left" }}>Time</th>
+    <th style={{ padding: "12px", textAlign: "left" }}>IP</th>
+    <th style={{ padding: "12px", textAlign: "left" }}>Method</th>
+    <th style={{ padding: "12px", textAlign: "left" }}>URL</th>
+    <th style={{ padding: "12px", textAlign: "left" }}>Attack</th>
+    <th style={{ padding: "12px", textAlign: "left" }}>Severity</th>
+    <th style={{ padding: "12px", textAlign: "left" }}>Payload</th>
+  </tr>
+</thead>
 
           <tbody>
-            {logs.map((log, index) => (
-              <tr key={index}>
-                <td>{log.time}</td>
-                <td>{log.ip}</td>
-                <td>
+          {filteredLogs.map((log, index) => (
+             <tr key={log.id || index}>
+  <td style={{ padding: "10px" }}>{log.time}</td>
+  <td style={{ padding: "10px" }}>{log.ip}</td>
+  <td style={{ padding: "10px" }}>{log.method}</td>
+  <td style={{ padding: "10px" }}>{log.url}</td>
+  
+
+  <td
+    style={{
+      padding: "10px",
+      fontWeight: "bold",
+      color:
+  log.attack === "SQL Injection"
+    ? "#ff4d4f"
+    : log.attack === "XSS"
+    ? "#faad14"
+    : log.attack === "Path Traversal"
+    ? "#1677ff"
+    : log.attack === "Failed Admin Login"
+    ? "#ff9f1a"
+    : log.attack === "Command Injection"
+    ? "#13c2c2"
+    : log.attack === "Brute Force Lockout"
+    ? "#d9363e"
+    : log.attack === "Blocked Admin Login Attempt"
+    ? "#722ed1"
+    : "white"
+    }}
+  >
+    {log.attack}
+  </td>
+
+  <td style={{ padding: "10px" }}>
   <span
     style={{
       padding: "6px 10px",
@@ -369,38 +649,25 @@ if (!isAdmin) {
       fontWeight: "bold",
       color: "white",
       backgroundColor:
-        log.severity === "Critical"
+        log.severity?.toLowerCase().trim() === "critical"
           ? "#ff4d4f"
-          : log.severity === "High"
+          : log.severity?.toLowerCase().trim() === "high"
           ? "#faad14"
           : "#1677ff"
     }}
   >
-    {log.severity}
+  {log.severity}
   </span>
 </td>
-                <td>{log.method}</td>
-                <td>{log.url}</td>
-                <td className={`attack-${log.attack}`}>
-                 <td
-  style={{
-    fontWeight: "bold",
-    color:
-      log.attack === "SQL Injection"
-        ? "#ff4d4f"
-        : log.attack === "XSS"
-        ? "#faad14"
-        : "#1677ff"
-  }}
->
-  {log.attack}
-</td>
-                </td>
-                <td>{log.payload}</td>
-              </tr>
+
+  <td style={{ padding: "10px", maxWidth: "320px", wordBreak: "break-word" }}>
+    {log.payload}
+  </td>
+</tr>
             ))}
           </tbody>
         </table>
+        <ToastContainer position="top-right" autoClose={2500} />
       </div>
     </>
   );
