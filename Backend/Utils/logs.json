@@ -148,5 +148,55 @@
     "attack": "Failed Admin Login",
     "payload": "{\"username\":\"admin\"}",
     "severity": "Medium"
+  },
+  {
+    "id": 1776660225252,
+    "time": "4/20/2026, 12:43:45 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "Command Injection",
+    "payload": "/simulate {\"type\":\"Command Injection\",\"payload\":\"; ls\"}",
+    "severity": "Critical"
+  },
+  {
+    "id": 1776660269853,
+    "time": "4/20/2026, 12:44:29 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "Command Injection",
+    "payload": "/simulate {\"type\":\"Command Injection\",\"payload\":\"; ls\"}",
+    "severity": "Critical"
+  },
+  {
+    "id": 1776660272410,
+    "time": "4/20/2026, 12:44:32 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "Path Traversal",
+    "payload": "/simulate {\"type\":\"Path Traversal\",\"payload\":\"../../../etc/passwd\"}",
+    "severity": "High"
+  },
+  {
+    "id": 1776660273942,
+    "time": "4/20/2026, 12:44:33 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "XSS",
+    "payload": "/simulate {\"type\":\"XSS\",\"payload\":\"<script>alert('xss')</script>\"}",
+    "severity": "High"
+  },
+  {
+    "id": 1776660275209,
+    "time": "4/20/2026, 12:44:35 AM",
+    "ip": "::1",
+    "method": "POST",
+    "url": "/simulate",
+    "attack": "SQL Injection",
+    "payload": "/simulate {\"type\":\"SQL Injection\",\"payload\":\"' OR 1=1 --\"}",
+    "severity": "Critical"
   }
 ]

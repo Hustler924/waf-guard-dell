@@ -610,7 +610,7 @@ const filteredLogs =
           {filteredLogs.map((log, index) => (
              <tr key={log.id || index}>
   <td style={{ padding: "10px" }}>{log.time}</td>
-  <td style={{ padding: "10px" }}>{log.ip}</td>
+  <td style={{ padding: "10px" }}>{log.ip.replace("::1", "127.0.0.1")}</td>
   <td style={{ padding: "10px" }}>{log.method}</td>
   <td style={{ padding: "10px" }}>{log.url}</td>
   
